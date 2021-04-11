@@ -37,6 +37,7 @@ pub struct Transaction {
     /// Transaction Identifier
     pub id: TransactionId,
     /// Optional Amount
+    #[serde(default)]
     pub amount: Option<Amount>,
 }
 

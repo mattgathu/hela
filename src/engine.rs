@@ -17,6 +17,7 @@ impl PaymentEngine {
             TransactionType::Deposit => {
                 debug_assert!(txn.amount.is_some());
                 self.store.deposit(txn.client, txn.amount.unwrap())?;
+                self.store.store_transaction(txn)?;
             }
             // Spec: If a client does not have sufficient available funds the withdrawal
             // should fail and the total amount of funds should not change.
@@ -30,7 +31,9 @@ impl PaymentEngine {
                 match self.store.withdraw(txn.client, txn.amount.unwrap()) {
                     Err(HelaError::InsufficientAccountFunds(_)) => {}
                     Err(e) => return Err(e),
-                    Ok(_) => {}
+                    Ok(_) => {
+                        self.store.store_transaction(txn)?;
+                    }
                 }
             }
             TransactionType::Chargeback => {
@@ -68,7 +71,6 @@ impl PaymentEngine {
             }
         }
 
-        self.store.store_transaction(txn)?;
         Ok(())
     }
 
