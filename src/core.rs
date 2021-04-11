@@ -39,6 +39,7 @@ pub struct Transaction {
     /// Optional Amount
     #[serde(default)]
     pub amount: Option<Amount>,
+    /// Transaction is disputed
     #[serde(default)]
     #[serde(skip)]
     pub disputed: bool,
