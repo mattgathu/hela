@@ -42,12 +42,11 @@ impl PaymentEngine {
                 //
                 //  How do you know tx is under dispute?
                 //
-                //  Assumption: check if account is frozen.
                 debug_assert!(txn.amount.is_none());
                 if let Ok(prev_txn) = self.store.get_transaction(txn.id) {
                     debug_assert!(prev_txn.client == txn.client);
                     debug_assert!(prev_txn.amount.is_some());
-                    if self.store.is_locked(txn.client)? {
+                    if prev_txn.disputed {
                         self.store
                             .chargeback(txn.client, prev_txn.amount.unwrap())?;
                     }
@@ -59,6 +58,7 @@ impl PaymentEngine {
                     debug_assert!(prev_txn.client == txn.client);
                     debug_assert!(prev_txn.amount.is_some());
                     self.store.dispute(txn.client, prev_txn.amount.unwrap())?;
+                    self.store.mark_transaction_as_disputed(prev_txn.id)?;
                 }
             }
             TransactionType::Resolve => {
@@ -66,7 +66,10 @@ impl PaymentEngine {
                 if let Ok(prev_txn) = self.store.get_transaction(txn.id) {
                     debug_assert!(prev_txn.client == txn.client);
                     debug_assert!(prev_txn.amount.is_some());
-                    self.store.resolve(txn.client, prev_txn.amount.unwrap())?;
+                    if prev_txn.disputed {
+                        self.store.resolve(txn.client, prev_txn.amount.unwrap())?;
+                        self.store.mark_transaction_as_undisputed(prev_txn.id)?;
+                    }
                 }
             }
         }

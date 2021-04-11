@@ -41,8 +41,15 @@ pub struct CsvWriterStdout;
 impl CsvWriterStdout {
     #[cfg(not(debug_assertions))]
     /// Write accounts to stdout
-    pub fn write(accounts: Box<dyn Iterator<Item = Account> + '_>) -> Fallible<()> {
-        let mut writer = csv::Writer::from_writer(std::io::stdout());
+    pub fn write<W: std::io::Write>(
+        accounts: Box<dyn Iterator<Item = Account> + '_>,
+        wtr: Option<W>,
+    ) -> Fallible<()> {
+        let mut writer = if let Some(w) = wtr {
+            csv::Writer::from_writer(w)
+        } else {
+            csv::Writer::from_writer(std::io::stdout())
+        };
         for acc in accounts {
             writer.serialize(acc).map_err(HelaError::CsvError)?;
         }
@@ -52,14 +59,25 @@ impl CsvWriterStdout {
 
     #[cfg(debug_assertions)]
     /// Write accounts to stdout
-    pub fn write(accounts: Box<dyn Iterator<Item = Account> + '_>) -> Fallible<()> {
-        let mut writer = csv::Writer::from_writer(std::io::stdout());
+    pub fn write<W: std::io::Write>(
+        accounts: Box<dyn Iterator<Item = Account> + '_>,
+        wtr: Option<W>,
+    ) -> Fallible<()> {
         let mut accounts: Vec<_> = accounts.collect();
         accounts.sort_by_key(|acc| acc.client);
-        for acc in accounts {
-            writer.serialize(acc).map_err(HelaError::CsvError)?;
-        }
-        writer.flush()?;
+        if let Some(w) = wtr {
+            let mut writer = csv::Writer::from_writer(w);
+            for acc in accounts {
+                writer.serialize(acc).map_err(HelaError::CsvError)?;
+            }
+            writer.flush()?;
+        } else {
+            let mut writer = csv::Writer::from_writer(std::io::stdout());
+            for acc in accounts {
+                writer.serialize(acc).map_err(HelaError::CsvError)?;
+            }
+            writer.flush()?;
+        };
         Ok(())
     }
 }

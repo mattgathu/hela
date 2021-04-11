@@ -31,4 +31,8 @@ pub enum HelaError {
     /// IO Errors
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+
+    /// String Parsing error
+    #[error(transparent)]
+    Utf8Error(#[from] std::string::FromUtf8Error),
 }

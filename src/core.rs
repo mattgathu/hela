@@ -1,6 +1,6 @@
 //! A module providing types for common data and traits for components.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 
 use crate::errors::Fallible;
 
@@ -39,6 +39,9 @@ pub struct Transaction {
     /// Optional Amount
     #[serde(default)]
     pub amount: Option<Amount>,
+    #[serde(default)]
+    #[serde(skip)]
+    pub disputed: bool,
 }
 
 /// Account
@@ -47,10 +50,13 @@ pub struct Account {
     /// Client
     pub client: Client,
     /// Available amount
+    #[serde(serialize_with = "ser_float")]
     pub available: Amount,
     /// Held amount
+    #[serde(serialize_with = "ser_float")]
     pub held: Amount,
     /// Total Amount
+    #[serde(serialize_with = "ser_float")]
     pub total: Amount,
     /// Locked status
     pub locked: bool,
@@ -126,4 +132,16 @@ pub trait TransactionStore {
 
     /// Persist a transaction in the storage backend
     fn store_transaction(&mut self, txn: Transaction) -> Fallible<()>;
+
+    /// Mark a transaction as disputed
+    fn mark_transaction_as_disputed(&mut self, id: TransactionId) -> Fallible<()>;
+
+    /// Mark a transaction as undisputed
+    fn mark_transaction_as_undisputed(&mut self, id: TransactionId) -> Fallible<()>;
+}
+
+/// Serialize floats
+pub fn ser_float<S: Serializer>(float: &f64, serializer: S) -> Result<S::Ok, S::Error> {
+    let float_as_str = format!("{:.2}", float);
+    serializer.serialize_str(&&float_as_str)
 }

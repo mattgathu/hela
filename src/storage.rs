@@ -38,6 +38,7 @@ impl AccountStore for InMemoryStore {
         let acc = self.get_account_mut(client_id);
         acc.held -= amount;
         acc.total -= amount;
+        acc.locked = true;
         if cfg!(debug_assertions) {
             acc.check_invariants();
         }
@@ -126,6 +127,24 @@ impl TransactionStore for InMemoryStore {
 
     fn store_transaction(&mut self, txn: Transaction) -> Fallible<()> {
         self.transactions.insert(txn.id, txn);
+        Ok(())
+    }
+
+    fn mark_transaction_as_disputed(&mut self, id: TransactionId) -> Fallible<()> {
+        let txn = self
+            .transactions
+            .get_mut(&id)
+            .ok_or(HelaError::TransactionNotFound(id))?;
+        txn.disputed = true;
+        Ok(())
+    }
+
+    fn mark_transaction_as_undisputed(&mut self, id: TransactionId) -> Fallible<()> {
+        let txn = self
+            .transactions
+            .get_mut(&id)
+            .ok_or(HelaError::TransactionNotFound(id))?;
+        txn.disputed = false;
         Ok(())
     }
 }
