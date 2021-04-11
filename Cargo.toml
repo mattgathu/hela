@@ -1,0 +1,13 @@
+[package]
+name = "hela"
+version = "0.1.0"
+authors = ["Matt Gathu <mattgathu@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+csv = "1.1"
+thiserror = "1.0"
+clap = "2.33"
